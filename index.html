@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>SnackFlow</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #f2f2f2;
+    text-align: center;
+}
+
+.container {
+    background: white;
+    width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+h1 {
+    color: orange;
+}
+
+.product {
+    margin: 10px 0;
+}
+
+input {
+    width: 80%;
+    padding: 5px;
+    margin: 5px;
+}
+
+button {
+    margin-top: 20px;
+    padding: 10px;
+    width: 80%;
+    background: orange;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🍔 SnackFlow</h1>
+
+<!-- FORMULÁŘ -->
+<input type="text" id="jmeno" placeholder="Příjmení Jméno"><br>
+<input type="email" id="email" placeholder="Email"><br>
+<input type="tel" id="telefon" placeholder="+420 000 000 000"><br>
+
+<hr>
+
+<!-- PRODUKTY -->
+<div id="produkty"></div>
+
+<p>Celková cena: <span id="cena">0</span> Kč</p>
+<p>Počet kusů: <span id="kusy">0</span></p>
+
+<button onclick="odeslat()">ODESLAT OBJEDNÁVKU</button>
+
+</div>
+
+<script>
+let produkty = [];
+
+// NAČTENÍ CSV
+fetch("data_snackflow.csv")
+.then(res => res.text())
+.then(text => {
+
+    let radky = text.split("\n");
+
+    for (let i = 1; i < radky.length; i++) {
+        let casti = radky[i].split(",");
+
+        if (casti.length < 2) continue;
+
+        produkty.push({
+            nazev: casti[0].trim(),
+            cena: Number(casti[1])
+        });
+    }
+
+    vykresli();
+});
+
+// VYKRESLENÍ
+function vykresli() {
+    let div = document.getElementById("produkty");
+
+    produkty.forEach((p, i) => {
+        div.innerHTML += `
+            <div class="product">
+                ${p.nazev} (${p.cena} Kč)
+                <input type="number" value="0" min="0" id="p${i}" onchange="prepocet()">
+            </div>
+        `;
+    });
+}
+
+// PŘEPOČET
+function prepocet() {
+    let cena = 0;
+    let kusy = 0;
+
+    produkty.forEach((p, i) => {
+        let pocet = Number(document.getElementById("p" + i).value);
+        cena += pocet * p.cena;
+        kusy += pocet;
+    });
+
+    document.getElementById("cena").innerText = cena;
+    document.getElementById("kusy").innerText = kusy;
+}
+
+// ODESLÁNÍ
+function odeslat() {
+    let jmeno = document.getElementById("jmeno").value;
+    let email = document.getElementById("email").value;
+    let telefon = document.getElementById("telefon").value;
+
+    if (!jmeno || !email || !telefon) {
+        alert("Vyplň všechny údaje!");
+        return;
+    }
+
+    let text = "Objednávka:\n";
+    let cena = 0;
+    let kusy = 0;
+
+    produkty.forEach((p, i) => {
+        let pocet = Number(document.getElementById("p" + i).value);
+
+        if (pocet > 0) {
+            text += p.nazev + " x" + pocet + "\n";
+            cena += pocet * p.cena;
+            kusy += pocet;
+        }
+    });
+
+    text += "\nCelkem: " + cena + " Kč";
+    text += "\nPočet kusů: " + kusy;
+    text += "\n\n" + jmeno + "\n" + email + "\n" + telefon;
+
+    window.location.href =
+        "mailto:app@kostka-skola.cz"
+        + "?subject=Objednávka"
+        + "&body=" + encodeURIComponent(text);
+}
+</script>
+
+</body>
+</html>
+``
